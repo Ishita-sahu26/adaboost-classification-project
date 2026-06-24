@@ -1,9 +1,16 @@
 import streamlit as st
-import joblib
 import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
 import pandas as pd
+import pickle
+
+# Try importing joblib safely
+try:
+    import joblib
+except ImportError:
+    joblib = None
+
 # ─── Page Config ────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="SmokeSense · Smoker Risk Predictor",
@@ -11,10 +18,30 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
 # ─── Load Model ─────────────────────────────────────────────────────────────
 @st.cache_resource
 def load_model():
-    return joblib.load("smoker_model.pkl")
+    model_path = "smoker_model.pkl"
+
+    # Try pickle first
+    try:
+        with open(model_path, "rb") as f:
+            model = pickle.load(f)
+        return model
+    except Exception:
+        pass
+
+    # Then try joblib
+    if joblib is not None:
+        try:
+            model = joblib.load(model_path)
+            return model
+        except Exception:
+            pass
+
+    st.error("❌ Could not load smoker_model.pkl using pickle or joblib.")
+    st.stop()
 
 model = load_model()
 # ─── Global CSS ─────────────────────────────────────────────────────────────
